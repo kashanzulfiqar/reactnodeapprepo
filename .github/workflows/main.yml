@@ -1,92 +1,91 @@
-name: CI/CD Pipeline - Docker Hub & AWS ECS
+name: Continuous Delivery Pipeline
 
 on:
   push:
-    branches:
-      - master  # Trigger workflow on push to main branch
-
-env:
-  AWS_REGION: eu-north-1                  # Change to your AWS region
-  ECS_SERVICE: my-app-service            # Your ECS Service name
-  ECS_CLUSTER: my-app-cluster           # Your ECS Cluster name
-  ECS_TASK_DEFINITION: ecs-task-def.json # Path to your task definition JSON file in repo
-  CONTAINER_NAME_BACKEND: backend        # Container name defined in ECS task def
-  CONTAINER_NAME_FRONTEND: frontend      # Container name defined in ECS task def
+    branches: [ main ] # Triggers whenever code is merged to main
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
+  # ==========================================
+  # STAGE 1: DEPLOY TO STAGING
+  # ==========================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: self-hosted
     steps:
-      # Step 1: Check out code from GitHub
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Log in to Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      # Step 3: Set up Docker Buildx for cached builds
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Step 4: Build images using Docker Compose
-      - name: Build Docker Images
-        run: |
-          docker compose build
-
-      # Step 5: Tag and Push Backend Image to Docker Hub
-      - name: Tag & Push Backend to Docker Hub
-        run: |
-          # Replace 'backend' with your compose service name if different
-          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:latest
-          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:${{ github.sha }}
-
-      # Step 6: Tag and Push Frontend Image to Docker Hub
-      - name: Tag & Push Frontend to Docker Hub
-        run: |
-          # Replace 'frontend' with your compose service name if different
-          docker tag reactfrontendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
-          docker tag reactfrontendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
-
-      # Step 7: Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
-      # Step 8: Update ECS Task Definition with new Backend Image
-      - name: Fill in new Backend image ID in ECS Task Definition
-        id: task-def-backend
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container-name: ${{ env.CONTAINER_NAME_BACKEND }}
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+      # --- 1. Apply Staging Infrastructure ---
+      - name: Terraform Apply (Staging)
+        run: |
+          cd infra/environments/staging
+          terraform init
+          terraform apply -auto-approve
 
-      # Step 9: Update ECS Task Definition with new Frontend Image
-      - name: Fill in new Frontend image ID in ECS Task Definition
-        id: task-def-frontend
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
-          container-name: ${{ env.CONTAINER_NAME_FRONTEND }}
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+      # --- 2. Build & Deploy Staging Frontend (S3) ---
+      - name: Build & Deploy Frontend to Staging S3
+        run: |
+          cd frontend
+          npm install
+          REACT_APP_API_URL=https://staging-api.yourdomain.com npm run build
+          aws s3 sync build/ s3://my-app-frontend-staging --delete
 
-      # Step 10: Deploy updated Task Definition to AWS ECS Cluster
-      - name: Deploy Amazon ECS Task Definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      # --- 3. Deploy Staging Backend (EC2) ---
+      - name: Deploy Backend to Staging EC2
+        run: |
+          echo "Deploying backend to Staging EC2 instance..."
+          # Your SSH command, Docker pull, or deployment script here
+
+  # ==========================================
+  # STAGE 2: MANUAL APPROVAL & DEPLOY TO PROD
+  # ==========================================
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging           # <--- Ensures Staging MUST finish first
+    runs-on: self-hosted
+    environment: production         # <--- TRIGGERS THE APPROVAL GATE!
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          task-definition: ${{ steps.task-def-frontend.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # --- 1. Apply Production Infrastructure ---
+      - name: Terraform Apply (Production)
+        run: |
+          cd infra/environments/prod
+          terraform init
+          terraform apply -auto-approve
+
+      # --- 2. Build & Deploy Prod Frontend (S3 + CloudFront) ---
+      - name: Build & Deploy Frontend to Prod S3
+        run: |
+          cd frontend
+          npm install
+          REACT_APP_API_URL=https://api.yourdomain.com npm run build
+          aws s3 sync build/ s3://my-app-frontend-prod --delete
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.PROD_CLOUDFRONT_DIST_ID }} --paths "/*"
+
+      # --- 3. Deploy Prod Backend (EC2) ---
+      - name: Deploy Backend to Prod EC2
+        run: |
+          echo "Deploying backend to Production EC2 instance..."
+          # Your SSH command, Docker pull, or deployment script here

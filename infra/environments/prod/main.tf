@@ -1,0 +1,28 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "prod_infra" {
+  source        = "../../modules/app_stack"
+  
+  environment   = "prod"
+  instance_type = "t3.micro"      # Larger instance for prod
+  ami_id        = "ami-0c7217cdde317cfec" # Replace with valid Ubuntu/Amazon Linux AMI in us-east-1
+}
+
+output "prod_ec2_ip" {
+  value = module.prod_infra.ec2_public_ip
+}
+
+output "prod_cloudfront_id" {
+  value = module.prod_infra.cloudfront_distribution_id
+}
