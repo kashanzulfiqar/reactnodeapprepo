@@ -42,8 +42,8 @@ jobs:
       - name: Tag & Push Backend to Docker Hub
         run: |
           # Replace 'backend' with your compose service name if different
-          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
-          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
+          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:latest
+          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/nodebackendimg:${{ github.sha }}
 
