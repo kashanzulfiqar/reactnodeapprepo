@@ -3,7 +3,7 @@ name: CI/CD Pipeline - Docker Hub & AWS ECS
 on:
   push:
     branches:
-      - main  # Trigger workflow on push to main branch
+      - master  # Trigger workflow on push to main branch
 
 env:
   AWS_REGION: us-east-1                  # Change to your AWS region
