@@ -1,0 +1,92 @@
+name: CI/CD Pipeline - Docker Hub & AWS ECS
+
+on:
+  push:
+    branches:
+      - main  # Trigger workflow on push to main branch
+
+env:
+  AWS_REGION: us-east-1                  # Change to your AWS region
+  ECS_SERVICE: my-app-service            # Your ECS Service name
+  ECS_CLUSTER: my-app-cluster            # Your ECS Cluster name
+  ECS_TASK_DEFINITION: ecs-task-def.json # Path to your task definition JSON file in repo
+  CONTAINER_NAME_BACKEND: backend        # Container name defined in ECS task def
+  CONTAINER_NAME_FRONTEND: frontend      # Container name defined in ECS task def
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out code from GitHub
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 3: Set up Docker Buildx for cached builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 4: Build images using Docker Compose
+      - name: Build Docker Images
+        run: |
+          docker compose build
+
+      # Step 5: Tag and Push Backend Image to Docker Hub
+      - name: Tag & Push Backend to Docker Hub
+        run: |
+          # Replace 'backend' with your compose service name if different
+          docker tag react-node-app-backend:latest ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
+          docker tag react-node-app-backend:latest ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+
+      # Step 6: Tag and Push Frontend Image to Docker Hub
+      - name: Tag & Push Frontend to Docker Hub
+        run: |
+          # Replace 'frontend' with your compose service name if different
+          docker tag react-node-app-frontend:latest ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
+          docker tag react-node-app-frontend:latest ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+
+      # Step 7: Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 8: Update ECS Task Definition with new Backend Image
+      - name: Fill in new Backend image ID in ECS Task Definition
+        id: task-def-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME_BACKEND }}
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+
+      # Step 9: Update ECS Task Definition with new Frontend Image
+      - name: Fill in new Frontend image ID in ECS Task Definition
+        id: task-def-frontend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
+          container-name: ${{ env.CONTAINER_NAME_FRONTEND }}
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+
+      # Step 10: Deploy updated Task Definition to AWS ECS Cluster
+      - name: Deploy Amazon ECS Task Definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def-frontend.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
