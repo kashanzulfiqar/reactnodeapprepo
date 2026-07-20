@@ -8,7 +8,7 @@ on:
 env:
   AWS_REGION: us-east-1                  # Change to your AWS region
   ECS_SERVICE: my-app-service            # Your ECS Service name
-  ECS_CLUSTER: my-app-cluster            # Your ECS Cluster name
+  ECS_CLUSTER: my-app-cluster           # Your ECS Cluster name
   ECS_TASK_DEFINITION: ecs-task-def.json # Path to your task definition JSON file in repo
   CONTAINER_NAME_BACKEND: backend        # Container name defined in ECS task def
   CONTAINER_NAME_FRONTEND: frontend      # Container name defined in ECS task def
