@@ -53,8 +53,8 @@ jobs:
           # Replace 'frontend' with your compose service name if different
           docker tag reactfrontendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
           docker tag reactfrontendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
 
       # Step 7: Configure AWS Credentials
       - name: Configure AWS Credentials
