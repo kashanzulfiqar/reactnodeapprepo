@@ -42,17 +42,17 @@ jobs:
       - name: Tag & Push Backend to Docker Hub
         run: |
           # Replace 'backend' with your compose service name if different
-          docker tag react-node-app-backend:latest ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
-          docker tag react-node-app-backend:latest ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
+          docker tag nodebackendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
 
       # Step 6: Tag and Push Frontend Image to Docker Hub
       - name: Tag & Push Frontend to Docker Hub
         run: |
           # Replace 'frontend' with your compose service name if different
-          docker tag react-node-app-frontend:latest ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
-          docker tag react-node-app-frontend:latest ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
+          docker tag reactfrontendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:latest
+          docker tag reactfrontendimg:latest ${{ secrets.DOCKERHUB_USERNAME }}/reactfrontendimg:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ github.sha }}
 
