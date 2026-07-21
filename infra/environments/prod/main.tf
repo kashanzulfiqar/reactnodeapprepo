@@ -7,6 +7,14 @@ terraform {
   }
 }
 
+# --- REMOTE STATE BACKEND ---
+  backend "s3" {
+    bucket = "kashan-tfstate-storage-2026"
+    key    = "prod/terraform.tfstate"    # Distinct path for Prod
+    region = "us-east-1"
+  }
+}
+
 provider "aws" {
   region = "us-east-1"
 }
