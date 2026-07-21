@@ -6,13 +6,13 @@ terraform {
     }
   }
 
-
-# --- REMOTE STATE BACKEND ---
+  # --- REMOTE STATE BACKEND ---
   backend "s3" {
     bucket = "kashan-tfstate-storage-2026"
     key    = "staging/terraform.tfstate" # Path inside the S3 bucket
     region = "us-east-1"
   }
+} # <--- THIS CLOSING BRACE WAS MISSING HERE!
 
 provider "aws" {
   region = "us-east-1"
