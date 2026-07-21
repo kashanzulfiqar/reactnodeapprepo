@@ -5,7 +5,7 @@ terraform {
       version = "~> 5.0"
     }
   }
-}
+
 
 # --- REMOTE STATE BACKEND ---
   backend "s3" {
@@ -13,7 +13,7 @@ terraform {
     key    = "prod/terraform.tfstate"    # Distinct path for Prod
     region = "us-east-1"
   }
-}
+
 
 provider "aws" {
   region = "us-east-1"
