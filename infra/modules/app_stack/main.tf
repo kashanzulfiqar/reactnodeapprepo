@@ -1,6 +1,6 @@
 # --- 1. S3 Bucket for Static Frontend ---
 resource "aws_s3_bucket" "frontend" {
-  bucket        = "my-app-frontend-${var.environment}"
+  bucket        = "kashan-my-app-frontend-${var.environment}"
   force_destroy = true
 }
 
