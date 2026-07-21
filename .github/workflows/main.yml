@@ -38,7 +38,7 @@ jobs:
           cd frontend
           npm install
           npm run build
-          REACT_APP_API_URL=https://staging-api.yourdomain.com npm run build
+          # REACT_APP_API_URL=https://staging-api.yourdomain.com npm run build
           aws s3 sync build/ s3://my-app-frontend-staging --delete
 
       # --- 3. Deploy Staging Backend (EC2) ---
