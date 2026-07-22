@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print Start Message
-        run: echo "🚀 Starting Workflow 1: Simulating deployment steps..."
+        run: |
+            echo "Starting Workflow 1: Simulating deployment steps..."
 
       - name: Print Status Output
         run: |
