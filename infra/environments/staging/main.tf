@@ -8,7 +8,7 @@ terraform {
 
   # --- REMOTE STATE BACKEND ---
   backend "s3" {
-    bucket = "kashan-tfstate-storage-2026"
+    bucket = "kashan-stagingtfstate-storage-2026"
     key    = "staging/terraform.tfstate" # Path inside the S3 bucket
     region = "us-east-1"
   }
