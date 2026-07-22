@@ -2,7 +2,7 @@ name: Continuous Delivery Pipeline
  
 on:
   push:
-    branches: [ master ] # Triggers whenever code is merged to main
+    branches: [ feature ] # Triggers whenever code is merged to main
 
 jobs:
   # ==========================================
@@ -12,8 +12,8 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     steps:
-     # - name: Checkout Code
-      #  uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
