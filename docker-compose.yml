@@ -1,15 +1,15 @@
 version: '3.8'
 
-services:
-  backend:
-    build:
-       context: ./backend
-       dockerfile: Dockerfile
-    image: nodebackendimg:latest
-    ports:
-      - "5000:5000"
-    environment:
-      - PORT=5000
+#services:
+ # backend:
+  #  build:
+   #    context: ./backend
+    #   dockerfile: Dockerfile
+    #image: nodebackendimg:latest
+    #ports:
+     # - "5000:5000"
+    #environment:
+     # - PORT=5000
 
   frontend:
     build: 
