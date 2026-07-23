@@ -83,7 +83,7 @@ jobs:
             git pull origin master
 
             # 3. Navigate to backend and run Docker Compose
-            cd $HOME/reactnoderepo
+            cd $HOME/reactnoderepo/
             
             # Rebuild image and bring up container in detached mode (-d)
             sudo docker compose up -d --build
