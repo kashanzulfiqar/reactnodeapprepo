@@ -31,6 +31,8 @@ jobs:
           cd infra/environments/staging
           terraform init
           terraform apply -auto-approve
+          EC2_IP=$(terraform output -raw staging_ec2_ip)
+          echo "STAGING_EC2_IP=$EC2_IP" >> $GITHUB_ENV
 
       # --- 2. Build & Deploy Staging Frontend (S3) ---
       - name: Build & Deploy Frontend to Staging S3
@@ -43,8 +45,35 @@ jobs:
 
       # --- 3. Deploy Staging Backend (EC2) ---
       - name: Deploy Backend to Staging EC2
-        run: |
-          echo "Deploying backend to Staging EC2 instance..."
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ env.STAGING_EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            echo "🚀 Deploying Backend to Staging EC2..."
+            
+            # Navigate to project directory (or clone if it's the first time)
+            if [ ! -d "~/app" ]; then
+              git clone https://github.com/${{ github.repository }}.git ~/app
+            fi
+            
+            cd ~/app
+            git fetch --all
+            git checkout master
+            git pull origin master
+            
+            # Navigate to backend, install dependencies, and restart PM2 process
+            cd ~/app/backend
+            npm install --production
+            
+            # Start process with PM2 or reload if already running
+            pm2 reload staging-backend || pm2 start server.js --name "staging-backend"
+            pm2 save
+       # run: |
+        #  echo "Deploying backend to Staging EC2 instance..."
+          
           # Your SSH command, Docker pull, or deployment script here
 
   # ==========================================
