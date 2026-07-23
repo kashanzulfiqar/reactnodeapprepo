@@ -1,6 +1,6 @@
 name: Continuous Delivery Pipeline
  
-on:
+on: 
   push:
     branches: [ master ] # Triggers whenever code is merged to main
  
