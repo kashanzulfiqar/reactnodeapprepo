@@ -79,11 +79,11 @@ jobs:
 
             cd $HOME/app
             git fetch --all
-            git checkout feature
-            git pull origin feature
+            git checkout master
+            git pull origin master
 
             # 3. Navigate to backend and run Docker Compose
-            cd $HOME/app/backend
+            cd $HOME/reactnoderepo
             
             # Rebuild image and bring up container in detached mode (-d)
             sudo docker compose up -d --build
