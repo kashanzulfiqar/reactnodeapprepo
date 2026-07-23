@@ -1,22 +1,22 @@
 version: '3.8'
 
-#services:
- # backend:
-  #  build:
-   #    context: ./backend
-    #   dockerfile: Dockerfile
-    #image: nodebackendimg:latest
-    #ports:
-     # - "5000:5000"
-    #environment:
-     # - PORT=5000
-
-  frontend:
-    build: 
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: reactfrontendimg:latest
+services:
+  backend:
+    build:
+       context: ./backend
+       dockerfile: Dockerfile
+    image: nodebackendimg:latest
     ports:
-      - "5173:5173"
-    depends_on:
-      - backend
+      - "5000:5000"
+    environment:
+      - PORT=5000
+
+  #frontend:
+   # build: 
+    #  context: ./frontend
+     # dockerfile: Dockerfile
+    #image: reactfrontendimg:latest
+    #ports:
+     # - "5173:5173"
+    #depends_on:
+     # - backend
