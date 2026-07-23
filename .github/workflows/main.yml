@@ -3,7 +3,7 @@ name: Continuous Delivery Pipeline
 on:
   push:
     branches: [ master ] # Triggers whenever code is merged to main
-
+ 
 jobs: 
   # ==========================================
   # STAGE 1: DEPLOY TO STAGING
