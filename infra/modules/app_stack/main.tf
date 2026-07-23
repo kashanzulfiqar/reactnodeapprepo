@@ -121,3 +121,20 @@ resource "aws_instance" "backend" {
     Environment = var.environment
   }
 }
+resource "aws_eip" "backend_eip" {
+  instance = aws_instance.backend.id
+  domain   = "vpc"
+
+  tags = {
+    Name        = "backend-eip-${var.environment}"
+    Environment = var.environment
+  }
+}
+output "ec2_public_ip" {
+  description = "The static Elastic IP address of the backend EC2 instance"
+  value       = aws_eip.backend_eip.public_ip
+}
+
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.s3_distribution.id
+}
