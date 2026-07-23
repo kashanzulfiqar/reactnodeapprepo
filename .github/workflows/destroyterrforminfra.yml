@@ -1,16 +1,16 @@
-name: "Destroy Terraform State Buckets"
+name: "Destroy Staging Infrastructure"
 
 on:
-  workflow_dispatch: # Triggers manually only to prevent accidental destruction
+  workflow_dispatch: # Manual trigger only
 
 jobs:
-  destroy-buckets:
-    name: "Destroy State Buckets via Terraform"
+  destroy-staging:
+    name: "Destroy Staging Environment"
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: ./bootstrap
+        working-directory: ./environments/staging # <--- Point to staging root module!
 
     steps:
       - name: Checkout Repository
@@ -30,9 +30,6 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-
-      - name: Terraform Plan Destroy
-        run: terraform plan -destroy -input=false
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -input=false
