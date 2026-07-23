@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ] # Triggers whenever code is merged to main
 
-jobs:
+jobs: 
   # ==========================================
   # STAGE 1: DEPLOY TO STAGING
   # ==========================================
