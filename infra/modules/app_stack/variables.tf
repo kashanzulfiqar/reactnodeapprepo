@@ -17,3 +17,7 @@ variable "ami_id" {
   type        = string
   description = "AMI ID for EC2 instance"
 }
+variable "key_name" {
+  type        = string
+  description = "ec2 security key"
+}
