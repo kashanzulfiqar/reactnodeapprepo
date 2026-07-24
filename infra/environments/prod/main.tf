@@ -24,6 +24,7 @@ module "prod_infra" {
   environment   = "prod"
   instance_type = "t3.micro"      # Larger instance for prod
   ami_id        = "ami-0ac1f955d6e62f3f1" # Replace with valid Ubuntu/Amazon Linux AMI in us-east-1
+  key_name      = "keyforec2"
 }
 
 output "prod_ec2_ip" {
