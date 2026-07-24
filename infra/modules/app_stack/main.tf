@@ -42,7 +42,7 @@ resource "aws_cloudfront_distribution" "cdn" {
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
-  ordered_cache_behavior {
+ ordered_cache_behavior {
     path_pattern     = "/api/*"
     target_origin_id = "EC2-${aws_instance.backend.id}"
 
@@ -51,8 +51,11 @@ resource "aws_cloudfront_distribution" "cdn" {
 
     viewer_protocol_policy = "redirect-to-https"
 
-    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" 
-    origin_request_policy_id = "b689302c-3a10-4e81-ac53-3a604231915c" 
+    # AWS Managed CachingDisabled Policy ID
+    cache_policy_id = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+
+    # AWS Managed AllViewer Policy ID (Forwards headers/query params to EC2)
+    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" 
   }
 
   default_cache_behavior {
