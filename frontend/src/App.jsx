@@ -8,7 +8,7 @@ function App() {
 
   const fetchMessage = () => {
     setLoading(true);
-    fetch('http://52.207.2.200:5000/api/message')
+    fetch('http://98.87.253.254/api/message')
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
         return res.json();
