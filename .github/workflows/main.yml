@@ -2,7 +2,7 @@ name: Continuous Delivery Pipeline
  
 on: 
   push:
-    branches: [ feature ] # Triggers whenever code is merged to main
+    branches: [ master ] # Triggers whenever code is merged to main
  
 jobs: 
   # ==========================================
