@@ -31,6 +31,29 @@ resource "aws_cloudfront_distribution" "cdn" {
     origin_id                = "S3-${aws_s3_bucket.frontend.id}"
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
   }
+  origin {
+    domain_name = aws_eip.backend_eip.public_dns
+    origin_id   = "EC2-${aws_instance.backend.id}"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    target_origin_id = "EC2-${aws_instance.backend.id}"
+
+    allowed_methods = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods  = ["GET", "HEAD"]
+
+    viewer_protocol_policy = "redirect-to-https"
+
+    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" 
+    origin_request_policy_id = "b689302c-3a10-4e81-ac53-3a604231915c" 
+  }
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
@@ -84,6 +107,7 @@ resource "aws_s3_bucket_policy" "allow_cloudfront" {
   })
 }
 
+
 # --- 5. EC2 Instance for Backend ---
 resource "aws_security_group" "backend_sg" {
   name        = "backend-sg-${var.environment}"
@@ -129,5 +153,14 @@ resource "aws_eip" "backend_eip" {
   tags = {
     Name        = "backend-eip-${var.environment}"
     Environment = var.environment
+  }
+}
+resource "terraform_data" "invalidate_cache" {
+  triggers_replace = [
+    aws_cloudfront_distribution.cdn.id
+  ]
+
+  provisioner "local-exec" {
+    command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.cdn.id} --paths '/*'"
   }
 }
