@@ -91,7 +91,7 @@ jobs:
       # Update bucket path/key below to match your Production state file S3 location
       - name: Fetch Production State File from S3
         run: |
-          aws s3 cp s3://kashan-stagingtfstate-storage-2026/prod/terraform.tfstate ./terraform.tfstate
+          aws s3 cp s3://kashan-prodtfstate-storage-2026/prod/terraform.tfstate ./terraform.tfstate
 
       - name: Generate Minimal Provider Config
         run: |
