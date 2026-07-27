@@ -1,4 +1,4 @@
-name: "Direct Destroy via S3 State"
+name: "Staging Direct Destroy via S3 State"
 
 on:
   workflow_dispatch:
