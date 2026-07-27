@@ -1,4 +1,4 @@
-name: "Staging Direct Destroy via S3 State"
+name: "Direct Destroy via S3 State"
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
   # ==========================================
   destroy-staging:
     name: Destroy Staging Infrastructure
-    if: ${{ github.event.inputs.target_environment == 'staging' }}
+    if: ${{ inputs.target_environment == 'staging' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -37,40 +37,20 @@ jobs:
         with:
           terraform_version: "1.7.0"
 
-      - name: Fetch Staging State File from S3
+      - name: Destroy Staging
         run: |
-          aws s3 cp s3://kashan-stagingtfstate-storage-2026/staging/terraform.tfstate ./terraform.tfstate
-
-      - name: Generate Minimal Provider Config
-        run: |
-          cat << 'EOF' > main.tf
-          terraform {
-            required_providers {
-              aws = {
-                source  = "hashicorp/aws"
-                version = "~> 5.0"
-              }
-            }
-          }
-          provider "aws" {
-            region = "us-east-1"
-          }
-          EOF
-
-      - name: Initialize Local Terraform
-        run: terraform init
-
-      - name: Destroy Staging Resources
-        run: terraform destroy -state=terraform.tfstate -auto-approve -input=false
+          cd infra/environments/staging
+          terraform init
+          terraform destroy -auto-approve
 
   # ==========================================
   # STAGE 2: DESTROY PRODUCTION INFRASTRUCTURE
   # ==========================================
   destroy-production:
     name: Destroy Production Infrastructure
-    if: ${{ github.event.inputs.target_environment == 'production' }}
+    if: ${{ inputs.target_environment == 'production' }}
     runs-on: ubuntu-latest
-    environment: production # <--- Triggers GitHub Environment Approval Gate!
+    environment: production # Requires approval in GitHub UI
 
     steps:
       - name: Checkout Repository
@@ -88,29 +68,8 @@ jobs:
         with:
           terraform_version: "1.7.0"
 
-      # Update bucket path/key below to match your Production state file S3 location
-      - name: Fetch Production State File from S3
+      - name: Destroy Production
         run: |
-          aws s3 cp s3://kashan-prodtfstate-storage-2026/prod/terraform.tfstate ./terraform.tfstate
-
-      - name: Generate Minimal Provider Config
-        run: |
-          cat << 'EOF' > main.tf
-          terraform {
-            required_providers {
-              aws = {
-                source  = "hashicorp/aws"
-                version = "~> 5.0"
-              }
-            }
-          }
-          provider "aws" {
-            region = "us-east-1"
-          }
-          EOF
-
-      - name: Initialize Local Terraform
-        run: terraform init
-
-      - name: Destroy Production Resources
-        run: terraform destroy -state=terraform.tfstate -auto-approve -input=false
+          cd infra/environments/prod
+          terraform init
+          terraform destroy -auto-approve
