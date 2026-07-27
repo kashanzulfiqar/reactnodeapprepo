@@ -34,3 +34,6 @@ output "staging_ec2_ip" {
 output "staging_cloudfront_id" {
   value = module.staging_infra.cloudfront_distribution_id
 }
+output "staging_site_url" {
+  value = "https://${module.staging_infra.cloudfront_domain_name}"
+}
