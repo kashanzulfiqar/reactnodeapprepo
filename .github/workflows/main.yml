@@ -35,9 +35,17 @@ jobs:
           # Extract Outputs
           EC2_IP=$(terraform output -raw staging_ec2_ip)
           CF_ID=$(terraform output -raw staging_cloudfront_id)
+          SITE_URL=$(terraform output -raw staging_site_url)
           
           echo "STAGING_EC2_IP=$EC2_IP" >> $GITHUB_ENV
           echo "STAGING_CF_ID=$CF_ID" >> $GITHUB_ENV
+
+          # Display URL in Pipeline Logs & Summary Dashboard
+          echo "=================================================="
+          echo "🚀 STAGING URL: $SITE_URL"
+          echo "=================================================="
+          echo "### 🌐 Staging Deployment Live!" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** [$SITE_URL]($SITE_URL)" >> $GITHUB_STEP_SUMMARY
 
       # --- 2. Build & Deploy Staging Frontend (S3 + CloudFront Invalidation) ---
       - name: Build & Deploy Frontend to Staging S3
@@ -116,9 +124,17 @@ jobs:
           # Extract Outputs
           EC2_IP=$(terraform output -raw prod_ec2_ip)
           CF_ID=$(terraform output -raw prod_cloudfront_id)
+          PROD_URL=$(terraform output -raw prod_site_url)
           
           echo "PROD_EC2_IP=$EC2_IP" >> $GITHUB_ENV
           echo "PROD_CF_ID=$CF_ID" >> $GITHUB_ENV
+
+          # Display URL in Pipeline Logs & Summary Dashboard
+          echo "=================================================="
+          echo "🚀 PRODUCTION URL: $PROD_URL"
+          echo "=================================================="
+          echo "### 🟢 Production Deployment Live!" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** [$PROD_URL]($PROD_URL)" >> $GITHUB_STEP_SUMMARY
 
       # --- 2. Build & Deploy Prod Frontend (S3 + CloudFront) ---
       - name: Build & Deploy Frontend to Prod S3
