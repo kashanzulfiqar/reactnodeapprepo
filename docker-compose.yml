@@ -33,10 +33,14 @@ services:
       - /var/run:/var/run:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro               # Required for cgroups v2 / systemd
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
       - /etc/machine-id:/etc/machine-id:ro
-    # Note: Removed --docker_only=true temporarily so cAdvisor can fall back on cgroup scanning
+    command:
+      - '--port=8080'
+      - '--docker_only=true'
+      - '--raw_cgroup_prefix_whitelist=/docker,/system.slice/docker-' # Tells cAdvisor where Docker cgroups live in systemd
     networks:
       - app-net
 
