@@ -33,14 +33,10 @@ services:
       - /var/run:/var/run:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro               # Critical for cgroups v2
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
       - /etc/machine-id:/etc/machine-id:ro
-    command:
-      - '--port=8080'
-      - '--docker_only=true'                             # Bypasses raw host system/user slices
-      - '--whitelisted_container_labels=com.docker.compose.service,com.docker.compose.project'
+    # Note: Removed --docker_only=true temporarily so cAdvisor can fall back on cgroup scanning
     networks:
       - app-net
 
