@@ -1,22 +1,72 @@
 version: '3.8'
 
 services:
+  # ==========================================
+  # 1. BACKEND APPLICATION (Host Port 80)
+  # ==========================================
   backend:
     build:
-       context: ./backend
-       dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     image: nodebackendimg:latest
+    restart: always
     ports:
-      - "80:5000"
+      - "80:5000"  # CloudFront hits EC2 Port 80 directly
     environment:
-      - PORT=80
+      - PORT=5000
 
-  #frontend:
-   # build: 
-    #  context: ./frontend
-     # dockerfile: Dockerfile
-    #image: reactfrontendimg:latest
-    #ports:
-     # - "5173:5173"
-    #depends_on:
-     # - backend
+  # ==========================================
+  # 2. NGINX REVERSE PROXY (Host Port 81 for Monitoring)
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    restart: always
+    ports:
+      - "81:80"  # Exposes Nginx on Port 81
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - grafana
+
+  # ==========================================
+  # 3. PROMETHEUS (Private Metrics Collector)
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ==========================================
+  # 4. GRAFANA (Monitoring UI)
+  # ==========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+    volumes:
+      - grafana-data:/var/lib/grafana
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+volumes:
+  prometheus-data:
+  grafana-data:
