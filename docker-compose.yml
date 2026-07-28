@@ -11,30 +11,15 @@ services:
     image: nodebackendimg:latest
     container_name: backend
     restart: always
+    ports:
+      - "80:5000"  # CloudFront origin traffic hits port 80 directly
     environment:
       - PORT=5000
     networks:
       - app-net
 
   # ==========================================
-  # 2. NGINX REVERSE PROXY
-  # ==========================================
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    restart: always
-    ports:
-      - "80:80"
-    configs:
-      - source: nginx_config
-        target: /etc/nginx/nginx.conf
-    depends_on:
-      - backend
-    networks:
-      - app-net
-
-  # ==========================================
-  # 3. CADVISOR (Container Metrics)
+  # 2. CADVISOR (Container Metrics)
   # ==========================================
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
@@ -53,7 +38,7 @@ services:
       - app-net
 
   # ==========================================
-  # 4. PROMETHEUS (Metrics Collector)
+  # 3. PROMETHEUS (Metrics Collector)
   # ==========================================
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -71,7 +56,7 @@ services:
       - app-net
 
   # ==========================================
-  # 5. GRAFANA (Visualization Dashboard)
+  # 4. GRAFANA (Visualization Dashboard)
   # ==========================================
   grafana:
     image: grafana/grafana:10.0.0
@@ -110,28 +95,3 @@ configs:
         - job_name: 'cadvisor'
           static_configs:
             - targets: ['cadvisor:8080']
-
-  nginx_config:
-    content: |
-      events {
-          worker_connections 1024;
-      }
-
-      http {
-          upstream backend_cluster {
-              server backend:5000;
-          }
-
-          server {
-              listen 80;
-              server_name localhost;
-
-              location / {
-                  proxy_pass http://backend_cluster;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-              }
-          }
-      }
