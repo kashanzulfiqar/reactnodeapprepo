@@ -31,13 +31,15 @@ services:
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
-      - /var/run/docker.sock:/var/run/docker.sock:ro   # Critical: Gives cAdvisor access to Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro               # Critical for cgroups v2
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
       - /etc/machine-id:/etc/machine-id:ro
     command:
       - '--port=8080'
+      - '--docker_only=true'                             # Bypasses raw host system/user slices
       - '--whitelisted_container_labels=com.docker.compose.service,com.docker.compose.project'
     networks:
       - app-net
