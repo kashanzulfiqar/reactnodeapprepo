@@ -93,18 +93,10 @@ services:
       - prometheus
     networks:
       - app-net
-
-networks:
-  app-net:
-    driver: bridge
-
-volumes:
-  prometheus_data:
-  grafana_data:
-  # ==========================================
+# ==========================================
   # 5. loki (log database)
   # ==========================================  
-loki:
+  loki:
     image: grafana/loki:latest
     container_name: loki
     ports:
@@ -119,6 +111,15 @@ loki:
           memory: 350M
         reservations:
           memory: 100M
+          
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  
 # ==========================================
 # INLINE CONFIGURATIONS
 # ==========================================
