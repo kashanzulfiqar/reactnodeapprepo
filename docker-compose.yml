@@ -12,14 +12,21 @@ services:
     container_name: backend
     restart: always
     ports:
-      - "80:5000"  # CloudFront origin traffic hits port 80 directly
+      - "80:5000"
     environment:
       - PORT=5000
     networks:
       - app-net
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        loki-batch-size: "400"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
 
   # ==========================================
-  # 2. DOCKER STATS EXPORTER (Container Metrics)
+  # 2. DOCKER STATS EXPORTER
   # ==========================================
   docker-stats:
     image: wywywywy/docker_stats_exporter:latest
@@ -33,7 +40,7 @@ services:
       - app-net
 
   # ==========================================
-  # 3. NODE EXPORTER (EC2 Host Metrics)
+  # 3. NODE EXPORTER
   # ==========================================
   node-exporter:
     image: prom/node-exporter:v1.6.1
@@ -53,7 +60,7 @@ services:
       - app-net
 
   # ==========================================
-  # 4. PROMETHEUS (Metrics Collector)
+  # 4. PROMETHEUS
   # ==========================================
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -74,7 +81,7 @@ services:
       - app-net
 
   # ==========================================
-  # 5. GRAFANA (Visualization Dashboard)
+  # 5. GRAFANA
   # ==========================================
   grafana:
     image: grafana/grafana:10.0.0
@@ -91,11 +98,13 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+      - loki
     networks:
       - app-net
-# ==========================================
-  # 5. loki (log database)
-  # ==========================================  
+
+  # ==========================================
+  # 6. LOKI
+  # ==========================================
   loki:
     image: grafana/loki:latest
     container_name: loki
@@ -105,13 +114,15 @@ services:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
     restart: always
+    networks:
+      - app-net
     deploy:
       resources:
         limits:
           memory: 350M
         reservations:
           memory: 100M
-          
+
 networks:
   app-net:
     driver: bridge
@@ -119,7 +130,7 @@ networks:
 volumes:
   prometheus_data:
   grafana_data:
-  
+
 # ==========================================
 # INLINE CONFIGURATIONS
 # ==========================================
@@ -149,4 +160,11 @@ configs:
           access: proxy
           url: http://prometheus:9090
           isDefault: true
+          editable: false
+
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+          isDefault: false
           editable: false
