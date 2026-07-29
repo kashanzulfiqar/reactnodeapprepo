@@ -19,30 +19,16 @@ services:
       - app-net
 
   # ==========================================
-  # 2. CADVISOR (Container Metrics)
+  # 2. DOCKER STATS EXPORTER (Container Metrics)
   # ==========================================
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.2
-    container_name: cadvisor
+  docker-stats:
+    image: wyveo/docker-stats-exporter:latest
+    container_name: docker-stats
     restart: always
-    privileged: true
-    userns_mode: host                       # Bypasses Docker user namespace isolation
-    environment:
-      - CADVISOR_HEALTHCHECK_URL=http://localhost:8080/healthz
-    devices:
-      - /dev/kmsg
     volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-      - /etc/machine-id:/etc/machine-id:ro
-    command:
-      - '--port=8080'
-      - '--docker=unix:///var/run/docker.sock'  # Explicitly forces cAdvisor to connect to Docker socket
-      - '--whitelisted_container_labels=com.docker.compose.service,com.docker.compose.project'
+    ports:
+      - "9487:9487"
     networks:
       - app-net
 
@@ -62,7 +48,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     depends_on:
-      - cadvisor
+      - docker-stats
     networks:
       - app-net
 
@@ -106,9 +92,9 @@ configs:
         evaluation_interval: 5s
 
       scrape_configs:
-        - job_name: 'cadvisor'
+        - job_name: 'docker-stats'
           static_configs:
-            - targets: ['cadvisor:8080']
+            - targets: ['docker-stats:9487']
 
   grafana_datasource:
     content: |
