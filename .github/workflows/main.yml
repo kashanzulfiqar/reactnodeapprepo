@@ -80,7 +80,11 @@ jobs:
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
               sudo usermod -aG docker ubuntu
             fi
-
+            # Ensure Loki Docker Plugin is installed host-wide
+            if ! sudo docker plugin ls | grep -q loki; then
+              echo "Installing Loki Docker Plugin..."
+              sudo docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+            fi
             if [ ! -d "$HOME/app" ]; then
               git clone https://github.com/${{ github.repository }}.git $HOME/app
             fi
