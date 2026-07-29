@@ -101,7 +101,24 @@ networks:
 volumes:
   prometheus_data:
   grafana_data:
-
+  # ==========================================
+  # 5. loki (log database)
+  # ==========================================  
+loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+        reservations:
+          memory: 100M
 # ==========================================
 # INLINE CONFIGURATIONS
 # ==========================================
