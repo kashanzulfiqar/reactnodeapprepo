@@ -33,7 +33,27 @@ services:
       - app-net
 
   # ==========================================
-  # 3. PROMETHEUS (Metrics Collector)
+  # 3. NODE EXPORTER (EC2 Host Metrics)
+  # ==========================================
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    ports:
+      - "9100:9100"
+    networks:
+      - app-net
+
+  # ==========================================
+  # 4. PROMETHEUS (Metrics Collector)
   # ==========================================
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -49,11 +69,12 @@ services:
       - '--storage.tsdb.path=/prometheus'
     depends_on:
       - docker-stats
+      - node-exporter
     networks:
       - app-net
 
   # ==========================================
-  # 4. GRAFANA (Visualization Dashboard)
+  # 5. GRAFANA (Visualization Dashboard)
   # ==========================================
   grafana:
     image: grafana/grafana:10.0.0
@@ -95,6 +116,10 @@ configs:
         - job_name: 'docker-stats'
           static_configs:
             - targets: ['docker-stats:9487']
+
+        - job_name: 'node-exporter'
+          static_configs:
+            - targets: ['node-exporter:9100']
 
   grafana_datasource:
     content: |
