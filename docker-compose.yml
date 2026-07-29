@@ -22,7 +22,7 @@ services:
   # 2. DOCKER STATS EXPORTER (Container Metrics)
   # ==========================================
   docker-stats:
-    image: wyveo/docker-stats-exporter:latest
+    image: wywywywy/docker_stats_exporter:latest
     container_name: docker-stats
     restart: always
     volumes:
