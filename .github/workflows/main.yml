@@ -2,7 +2,7 @@ name: Continuous Delivery Pipeline
 
 on: 
   push:
-    branches: [ master1 ]
+    branches: [ master ]
 
 jobs: 
   # ==========================================
