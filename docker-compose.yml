@@ -7,14 +7,20 @@ services:
   nginx:
     image: nginx:alpine
     container_name: nginx
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
-      # Mount nginx.conf from the root of your repository
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 20M
     networks:
       - app-net
 
@@ -24,11 +30,23 @@ services:
   backend:
     image: kashan1234/my-backend:${IMAGE_TAG:-latest}
     container_name: backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "81:5000"
     environment:
       - PORT=5000
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+        reservations:
+          memory: 100M
     networks:
       - app-net
     logging:
@@ -45,11 +63,17 @@ services:
   docker-stats:
     image: wywywywy/docker_stats_exporter:latest
     container_name: docker-stats
-    restart: always
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "9487:9487"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 20M
     networks:
       - app-net
 
@@ -59,7 +83,7 @@ services:
   node-exporter:
     image: prom/node-exporter:v1.6.1
     container_name: node-exporter
-    restart: always
+    restart: unless-stopped
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -70,6 +94,12 @@ services:
       - '--path.rootfs=/rootfs'
     ports:
       - "9100:9100"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 20M
     networks:
       - app-net
 
@@ -79,25 +109,23 @@ services:
   prometheus:
     image: prom/prometheus:v2.45.0
     container_name: prometheus
-    restart: always
-    configs:
-      - source: prometheus_config
-        target: /etc/prometheus/prometheus.yml
+    restart: unless-stopped
     volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=2d'           # Keep only 2 days of data on disk
-      - '--storage.tsdb.retention.size=1GB'          # Hard limit metric storage on disk
-      - '--storage.tsdb.wal-compression'             # Compress write-ahead log to save RAM
-      - '--query.max-concurrency=2'                  # Restrict concurrent heavy Grafana queries
+      - '--storage.tsdb.retention.time=2d'
+      - '--storage.tsdb.retention.size=1GB'
+      - '--storage.tsdb.wal-compression'
+      - '--query.max-concurrency=2'
     deploy:
       resources:
         limits:
-          memory: 250M
+          memory: 200M
         reservations:
-          memory: 100M
+          memory: 80M
     depends_on:
       - docker-stats
       - node-exporter
@@ -110,16 +138,20 @@ services:
   grafana:
     image: grafana/grafana:10.0.0
     container_name: grafana
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    configs:
-      - source: grafana_datasource
-        target: /etc/grafana/provisioning/datasources/prometheus.yaml
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    deploy:
+      resources:
+        limits:
+          memory: 180M
+        reservations:
+          memory: 80M
     depends_on:
       - prometheus
       - loki
@@ -135,17 +167,17 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
     command: -config.file=/etc/loki/local-config.yaml
-    restart: always
-    networks:
-      - app-net
+    restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 350M
+          memory: 250M
         reservations:
-          memory: 100M
+          memory: 80M
+    networks:
+      - app-net
 
 networks:
   app-net:
@@ -154,41 +186,3 @@ networks:
 volumes:
   prometheus_data:
   grafana_data:
-
-# ==========================================
-# INLINE CONFIGURATIONS
-# ==========================================
-configs:
-  prometheus_config:
-    content: |
-      global:
-        scrape_interval: 15s
-        evaluation_interval: 15s
-
-      scrape_configs:
-        - job_name: 'docker-stats'
-          static_configs:
-            - targets: ['docker-stats:9487']
-
-        - job_name: 'node-exporter'
-          static_configs:
-            - targets: ['node-exporter:9100']
-
-  grafana_datasource:
-    content: |
-      apiVersion: 1
-
-      datasources:
-        - name: Prometheus
-          type: prometheus
-          access: proxy
-          url: http://prometheus:9090
-          isDefault: true
-          editable: false
-
-        - name: Loki
-          type: loki
-          access: proxy
-          url: http://loki:3100
-          isDefault: false
-          editable: false
