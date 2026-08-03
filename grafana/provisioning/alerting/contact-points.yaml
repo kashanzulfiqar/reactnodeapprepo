@@ -5,6 +5,7 @@ contactPoints:
     name: Slack Alerts
     receivers:
       - uid: slack-notifier
-        type: webhook # 👈 Change from 'slack' to 'webhook'
+        type: webhook
         settings:
-          url: "${SLACK_WEBHOOK_URL}"
+          # Uses $SLACK_WEBHOOK_URL from env, but defaults to your full webhook URL if empty
+          url: "${SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/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}"
