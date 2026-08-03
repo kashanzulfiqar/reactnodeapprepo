@@ -120,7 +120,7 @@ jobs:
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             echo "📝 Writing IMAGE_TAG to .env..."
-            echo "IMAGE_TAG=sha-${{ github.sha }}" > .env
+            echo "IMAGE_TAG=sha-${{ github.sha }}" >> .env
 
             echo "📥 Pulling staging image..."
             sudo docker compose pull backend
@@ -241,7 +241,7 @@ jobs:
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             echo "📝 Writing IMAGE_TAG to .env..."
-            echo "IMAGE_TAG=sha-${{ github.sha }}" > .env
+            echo "IMAGE_TAG=sha-${{ github.sha }}" >> .env
 
             echo "📥 Pulling exact verified image..."
             sudo docker compose pull backend
