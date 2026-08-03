@@ -144,6 +144,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin} # Fallback added
       - GF_PANELS_DISABLE_SANITIZE_HTML=true
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
