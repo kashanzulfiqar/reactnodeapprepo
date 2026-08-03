@@ -28,7 +28,7 @@ services:
   # 1. BACKEND APPLICATION
   # ==========================================
   backend:
-    image: kashan1234/my-backend:${IMAGE_TAG:-latest}
+    image: kashan1234/my-backend:${IMAGE_TAG:-staging-latest}
     container_name: backend
     restart: unless-stopped
     ports:
