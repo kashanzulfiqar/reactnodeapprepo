@@ -22,10 +22,7 @@ services:
   # 1. BACKEND APPLICATION
   # ==========================================
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: nodebackendimg:latest
+    image: kashan1234/my-backend:${IMAGE_TAG:-latest}
     container_name: backend
     restart: always
     ports:
