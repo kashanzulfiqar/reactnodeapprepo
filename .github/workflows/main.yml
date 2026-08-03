@@ -54,7 +54,7 @@ jobs:
           aws s3 sync dist/ s3://kashan-my-app-frontend-staging --delete
           aws cloudfront create-invalidation --distribution-id ${{ env.STAGING_CF_ID }} --paths "/*"
 
-      # --- 3. Build & Push Backend Docker Image (ONCE) ---
+      # --- 3. Build & Push Backend Docker Image ---
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -119,11 +119,14 @@ jobs:
             echo "🔑 Logging in to Docker Hub on EC2..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
+            echo "📝 Writing IMAGE_TAG to .env..."
+            echo "IMAGE_TAG=sha-${{ github.sha }}" > .env
+
             echo "📥 Pulling staging image..."
-            IMAGE_TAG=sha-${{ github.sha }} sudo -E docker compose pull backend
+            sudo docker compose pull backend
             
             echo "🔄 Updating running stack..."
-            IMAGE_TAG=sha-${{ github.sha }} sudo -E docker compose up -d
+            sudo docker compose up -d
 
             echo "🧹 Cleaning unused images..."
             sudo docker image prune -f
@@ -179,7 +182,7 @@ jobs:
           aws s3 sync dist/ s3://kashan-my-app-frontend-prod --delete
           aws cloudfront create-invalidation --distribution-id ${{ env.PROD_CF_ID }} --paths "/*"
 
-      # --- 3. Promoted Image Tagging (Optional Tag Push to Docker Hub) ---
+      # --- 3. Promoted Image Tagging ---
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -192,7 +195,7 @@ jobs:
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
 
-      # --- 4. Deploy Backend to Production EC2 (Re-using identical image) ---
+      # --- 4. Deploy Backend to Production EC2 ---
       - name: Deploy Backend to Prod EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -237,11 +240,14 @@ jobs:
             echo "🔑 Logging in to Docker Hub on EC2..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
+            echo "📝 Writing IMAGE_TAG to .env..."
+            echo "IMAGE_TAG=sha-${{ github.sha }}" > .env
+
             echo "📥 Pulling exact verified image..."
-            IMAGE_TAG=sha-${{ github.sha }} sudo -E docker compose pull backend
+            sudo docker compose pull backend
 
             echo "🔄 Updating running stack..."
-            IMAGE_TAG=sha-${{ github.sha }} sudo -E docker compose up -d
+            sudo docker compose up -d
 
             echo "🧹 Cleaning unused images..."
             sudo docker image prune -f
