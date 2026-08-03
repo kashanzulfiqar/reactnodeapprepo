@@ -141,8 +141,9 @@ services:
     env_file:
       - .env
     environment:
+      environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin} # Fallback added
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_PANELS_DISABLE_SANITIZE_HTML=true
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
     volumes:
