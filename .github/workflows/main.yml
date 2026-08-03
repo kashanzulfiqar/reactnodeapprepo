@@ -69,6 +69,13 @@ jobs:
             set -e
             echo "🚀 Deploying Backend to Staging EC2..."
             
+            # --- OS Maintenance & Stabilization ---
+            echo "🔧 Applying system stability settings..."
+            sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true
+            sudo systemctl disable apt-daily.timer apt-daily-upgrade.timer || true
+            sudo journalctl --vacuum-size=100M || true
+
+            # --- Docker Setup ---
             if ! command -v docker &> /dev/null; then
               echo "Installing Docker..."
               sudo apt-get update
@@ -80,11 +87,14 @@ jobs:
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
               sudo usermod -aG docker ubuntu
             fi
+
             # Ensure Loki Docker Plugin is installed host-wide
             if ! sudo docker plugin ls | grep -q loki; then
               echo "Installing Loki Docker Plugin..."
               sudo docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
             fi
+
+            # --- Deployment ---
             if [ ! -d "$HOME/app" ]; then
               git clone https://github.com/${{ github.repository }}.git $HOME/app
             fi
@@ -94,7 +104,12 @@ jobs:
             git checkout master
             git pull origin master
 
+            # Build and deploy stack
             sudo docker compose up -d --build
+
+            # --- Post-Deployment Disk Cleanup ---
+            echo "🧹 Cleaning unused Docker images and build layers..."
+            sudo docker system prune -af
 
   # ==========================================
   # STAGE 2: MANUAL APPROVAL & DEPLOY TO PROD
@@ -102,8 +117,8 @@ jobs:
   deploy-production:
     name: Deploy to Production
     needs: deploy-staging           # <--- Ensures Staging MUST finish first
-    runs-on: ubuntu-latest          # <--- Changed from self-hosted to standard runner
-    environment: production         # <--- TRIGGERS MANUAL APPROVAL GATE IN GITHUB!
+    runs-on: ubuntu-latest          # <--- Standard runner
+    environment: production          # <--- Manual Approval Gate
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -160,6 +175,13 @@ jobs:
             set -e
             echo "🚀 Deploying Backend to Production EC2..."
             
+            # --- OS Maintenance & Stabilization ---
+            echo "🔧 Applying system stability settings..."
+            sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer || true
+            sudo systemctl disable apt-daily.timer apt-daily-upgrade.timer || true
+            sudo journalctl --vacuum-size=100M || true
+
+            # --- Docker Setup ---
             if ! command -v docker &> /dev/null; then
               sudo apt-get update
               sudo apt-get install -y ca-certificates curl gnupg lsb-release
@@ -171,6 +193,13 @@ jobs:
               sudo usermod -aG docker ubuntu
             fi
 
+            # Ensure Loki Docker Plugin is installed host-wide
+            if ! sudo docker plugin ls | grep -q loki; then
+              echo "Installing Loki Docker Plugin..."
+              sudo docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+            fi
+
+            # --- Deployment ---
             if [ ! -d "$HOME/app" ]; then
               git clone https://github.com/${{ github.repository }}.git $HOME/app
             fi
@@ -180,4 +209,9 @@ jobs:
             git checkout master
             git pull origin master
 
+            # Build and deploy stack
             sudo docker compose up -d --build
+
+            # --- Post-Deployment Disk Cleanup ---
+            echo "🧹 Cleaning unused Docker images and build layers..."
+            sudo docker system prune -af
