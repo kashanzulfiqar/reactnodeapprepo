@@ -2,7 +2,7 @@ name: Continuous Delivery Pipeline
 
 on: 
   push:
-    branches: [ master1 ] # Triggers whenever code is merged to master1
+    branches: [ master1 ] # Triggers whenever code is pushed to master1
 
 jobs: 
   # ==========================================
@@ -47,7 +47,7 @@ jobs:
           echo "### 🌐 Staging Deployment Live!" >> $GITHUB_STEP_SUMMARY
           echo "**URL:** [$SITE_URL]($SITE_URL)" >> $GITHUB_STEP_SUMMARY
 
-      # --- 2. Build & Deploy Staging Frontend (S3 + CloudFront) ---
+      # --- 2. Build & Deploy Staging Frontend (S3 + CloudFront Invalidation) ---
       - name: Build & Deploy Frontend to Staging S3
         run: |
           cd frontend
@@ -58,7 +58,7 @@ jobs:
           # Force CloudFront Cache Invalidation
           aws cloudfront create-invalidation --distribution-id ${{ env.STAGING_CF_ID }} --paths "/*"
 
-      # --- 3. Build & Push Backend Docker Image (On Runner) ---
+      # --- 3. Build & Push Backend Docker Image to Private Docker Hub ---
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -68,15 +68,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push Backend Image (Staging)
+      - name: Build and Push Backend Image (Staging Tags)
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-${{ github.sha }}
 
-      # --- 4. Deploy Staging Backend to EC2 (Pull Only) ---
+      # --- 4. Deploy Backend to Staging EC2 (Pull Pre-Built Image) ---
       - name: Deploy Backend to Staging EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -122,16 +124,20 @@ jobs:
             git checkout master1
             git pull origin master1
 
-            # --- Authenticate, Pull & Run Pre-Built Image ---
+            # --- Login, Force Pull & Recreate Container ---
             echo "🔑 Logging in to Docker Hub on EC2..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             export IMAGE_TAG=staging-latest
+            
+            echo "📥 Pulling latest staging image..."
             sudo -E docker compose pull backend
-            sudo -E docker compose up -d backend
+            
+            echo "🔄 Updating running stack..."
+            sudo -E docker compose up -d
 
             # --- Post-Deployment Disk Cleanup ---
-            echo "🧹 Cleaning dangling images..."
+            echo "🧹 Cleaning unused dangling images..."
             sudo docker image prune -f
 
   # ==========================================
@@ -139,9 +145,9 @@ jobs:
   # ==========================================
   deploy-production:
     name: Deploy to Production
-    needs: deploy-staging           # <--- Ensures Staging MUST finish first
-    runs-on: ubuntu-latest          # <--- Standard runner
-    environment: production         # <--- Manual Approval Gate
+    needs: deploy-staging           # Ensures Staging MUST finish first
+    runs-on: ubuntu-latest          # Standard runner
+    environment: production         # Manual Approval Gate
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -187,7 +193,7 @@ jobs:
           aws s3 sync dist/ s3://kashan-my-app-frontend-prod --delete
           aws cloudfront create-invalidation --distribution-id ${{ env.PROD_CF_ID }} --paths "/*"
 
-      # --- 3. Build & Push Backend Docker Image (Production Tag) ---
+      # --- 3. Build & Push Backend Docker Image (Production Tags) ---
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -197,15 +203,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push Backend Image (Production)
+      - name: Build and Push Backend Image (Production Tags)
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-${{ github.sha }}
 
-      # --- 4. Deploy Prod Backend to EC2 (Pull Only) ---
+      # --- 4. Deploy Backend to Production EC2 (Pull Pre-Built Image) ---
       - name: Deploy Backend to Prod EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -250,14 +258,18 @@ jobs:
             git checkout master1
             git pull origin master1
 
-            # --- Authenticate, Pull & Run Pre-Built Image ---
+            # --- Login, Force Pull & Recreate Container ---
             echo "🔑 Logging in to Docker Hub on EC2..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             export IMAGE_TAG=prod-latest
+
+            echo "📥 Pulling latest production image..."
             sudo -E docker compose pull backend
-            sudo -E docker compose up -d backend
+
+            echo "🔄 Updating running stack..."
+            sudo -E docker compose up -d
 
             # --- Post-Deployment Disk Cleanup ---
-            echo "🧹 Cleaning dangling images..."
+            echo "🧹 Cleaning unused dangling images..."
             sudo docker image prune -f
