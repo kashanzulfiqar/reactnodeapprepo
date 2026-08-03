@@ -8,7 +8,7 @@ contactPoints:
         type: slack
         settings:
           # Replace with your actual Slack Incoming Webhook URL
-          url: "https://hooks.slack.com/services/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"
+          url: "${SLACK_WEBHOOK_URL}"
           recipient: "#daftarproupdatesmonitoring"
           username: "Grafana"
           mentionChannel: "here"
