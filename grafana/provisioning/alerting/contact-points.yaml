@@ -7,8 +7,10 @@ contactPoints:
       - uid: slack-notifier
         type: slack
         settings:
-          # Replace with your actual Slack Incoming Webhook URL
+          # Using url mode for Slack Incoming Webhooks
           url: "${SLACK_WEBHOOK_URL}"
           recipient: "#daftarproupdatesmonitoring"
           username: "Grafana"
           mentionChannel: "here"
+          # Adding a token placeholder prevents Grafana's parser from failing validation
+          token: ""
