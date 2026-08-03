@@ -91,6 +91,16 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2d'           # Keep only 2 days of data on disk
+      - '--storage.tsdb.retention.size=1GB'          # Hard limit metric storage on disk
+      - '--storage.tsdb.wal-compression'             # Compress write-ahead log to save RAM
+      - '--query.max-concurrency=2'                  # Restrict concurrent heavy Grafana queries
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+        reservations:
+          memory: 100M
     depends_on:
       - docker-stats
       - node-exporter
@@ -155,8 +165,8 @@ configs:
   prometheus_config:
     content: |
       global:
-        scrape_interval: 5s
-        evaluation_interval: 5s
+        scrape_interval: 15s
+        evaluation_interval: 15s
 
       scrape_configs:
         - job_name: 'docker-stats'
