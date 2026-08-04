@@ -63,6 +63,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Build and Push Backend Image
         uses: docker/build-push-action@v5
         with:
@@ -118,8 +119,11 @@ jobs:
             echo "🔑 Logging in to Docker Hub on EC2..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-            echo "📝 Writing IMAGE_TAG to .env..."
-            echo "IMAGE_TAG=sha-${{ github.sha }}" >> .env
+            echo "📝 Writing environment variables to .env..."
+            cat << 'EOF' > .env
+DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+IMAGE_TAG=sha-${{ github.sha }}
+EOF
 
             echo "📥 Pulling staging image..."
             sudo docker compose pull backend
@@ -239,8 +243,11 @@ jobs:
             echo "🔑 Logging in to Docker Hub on EC2..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-            echo "📝 Writing IMAGE_TAG to .env..."
-            echo "IMAGE_TAG=sha-${{ github.sha }}" >> .env
+            echo "📝 Writing environment variables to .env..."
+            cat << 'EOF' > .env
+DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+IMAGE_TAG=sha-${{ github.sha }}
+EOF
 
             echo "📥 Pulling exact verified image..."
             sudo docker compose pull backend
