@@ -71,8 +71,7 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }}${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-latest
 
       # --- 4. Deploy Backend to Staging EC2 ---
       - name: Deploy Backend to Staging EC2
@@ -96,7 +95,7 @@ jobs:
               sudo apt-get install -y ca-certificates curl gnupg lsb-release
               sudo mkdir -p /etc/apt/keyrings
               curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
               sudo apt-get update
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
               sudo usermod -aG docker ubuntu
@@ -120,7 +119,7 @@ jobs:
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             echo "📝 Writing environment variables to .env..."
-            cat << 'EOF' > .env
+            cat << EOF > .env
 DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
 IMAGE_TAG=sha-${{ github.sha }}
 EOF
@@ -195,7 +194,7 @@ EOF
       - name: Tag and Push Prod-Latest
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }}
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }}${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:prod-latest
 
       # --- 4. Deploy Backend to Production EC2 ---
@@ -220,7 +219,7 @@ EOF
               sudo apt-get install -y ca-certificates curl gnupg lsb-release
               sudo mkdir -p /etc/apt/keyrings
               curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
               sudo apt-get update
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
               sudo usermod -aG docker ubuntu
@@ -244,10 +243,10 @@ EOF
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             echo "📝 Writing environment variables to .env..."
-            cat << 'EOF' > .env
-DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-IMAGE_TAG=sha-${{ github.sha }}
-EOF
+            cat << EOF > .env
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            IMAGE_TAG=sha-${{ github.sha }}
+            EOF
 
             echo "📥 Pulling exact verified image..."
             sudo docker compose pull backend
