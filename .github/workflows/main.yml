@@ -120,9 +120,9 @@ jobs:
 
             echo "📝 Writing environment variables to .env..."
             cat << EOF > .env
-DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-IMAGE_TAG=sha-${{ github.sha }}
-EOF
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            IMAGE_TAG=sha-${{ github.sha }}
+            EOF
 
             echo "📥 Pulling staging image..."
             sudo docker compose pull backend
