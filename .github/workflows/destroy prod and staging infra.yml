@@ -10,7 +10,6 @@ on:
         options:
           - staging
           - production
-
 jobs:
   # ==========================================
   # STAGE 1: DESTROY STAGING INFRASTRUCTURE
