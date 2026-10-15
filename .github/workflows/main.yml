@@ -3,7 +3,6 @@ name: Continuous Delivery Pipeline
 on: 
   push:
     branches: [ main ]
-
 jobs: 
   # ==========================================
   # STAGE 1: DEPLOY TO STAGING
