@@ -70,7 +70,8 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }}${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:sha-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:staging-latest
 
       # --- 4. Deploy Backend to Staging EC2 ---
       - name: Deploy Backend to Staging EC2
