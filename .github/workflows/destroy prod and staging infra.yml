@@ -1,5 +1,4 @@
 name: "Direct Destroy via S3 State"
-
 on:
   workflow_dispatch:
     inputs:
